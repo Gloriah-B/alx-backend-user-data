@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Auth module
+Auth module for managing user authentication.
 """
 from db import DB
 from uuid import uuid4
@@ -52,7 +52,7 @@ class Auth:
             User: The registered user.
 
         Raises:
-            ValueError: If the user already exists.
+            ValueError: If a user with the given email already exists.
         """
         try:
             self._db.find_user_by(email=email)
@@ -85,7 +85,7 @@ class Auth:
             email (str): Email of the user.
 
         Returns:
-            str: String representation of session ID or None if user not found
+            str: String representation of session ID, None if user isnt found
         """
         try:
             user = self._db.find_user_by(email=email)
