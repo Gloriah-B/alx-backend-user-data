@@ -1,58 +1,52 @@
 #!/usr/bin/env python3
 """
-Auth module for managing user authentication.
+Auth module
 """
 from db import DB
 from uuid import uuid4
 from user import User
 from bcrypt import hashpw, gensalt, checkpw
+from typing import TypeVar
 from sqlalchemy.orm.exc import NoResultFound
 
 
-def _hash_password(password: str) -> bytes:
-    """
-    Hash a password for a user.
+def _hash_password(password: str) -> str:
+    """hash a password pass for user
 
     Args:
-        password (str): Password of the user.
+        password (str): password of user
 
     Returns:
-        bytes: The hashed password.
+        str: password hashed
     """
     return hashpw(password.encode('utf-8'), gensalt())
 
 
 def _generate_uuid() -> str:
-    """
-    Generate a new UUID.
+    """generate uuid
 
     Returns:
-        str: String representation of the UUID.
+        str: representation of a new UUID
     """
     return str(uuid4())
 
 
 class Auth:
-    """
-    Auth class to interact with the authentication database.
+    """Auth class to interact with the authentication database.
     """
 
     def __init__(self):
         self._db = DB()
 
     def register_user(self, email: str, password: str) -> User:
-        """
-        Register a new user.
+        """register a user
 
         Args:
-            email (str): Email of the user.
-            password (str): Password of the user.
+            email (str): email of user
+            password (str): password of user
 
         Returns:
-            User: The registered user.
-
-        Raises:
-            ValueError: If a user with the given email already exists.
+            User: user registered
         """
         try:
             self._db.find_user_by(email=email)
@@ -61,15 +55,14 @@ class Auth:
             return self._db.add_user(email, _hash_password(password))
 
     def valid_login(self, email: str, password: str) -> bool:
-        """
-        Validate user login.
+        """valid login of user
 
         Args:
-            email (str): Email of the user.
-            password (str): Password of the user.
+            email (str): email of user
+            password (str): password of user
 
         Returns:
-            bool: True if login is valid, False otherwise.
+            bool: [description]
         """
         try:
             user = self._db.find_user_by(email=email)
@@ -78,47 +71,43 @@ class Auth:
         return checkpw(password.encode('utf-8'), user.hash_password)
 
     def create_session(self, email: str) -> str:
-        """
-        Create a new session for a user.
+        """create a new session for user
 
         Args:
-            email (str): Email of the user.
+            email (str): email of user
 
         Returns:
-            str: String representation of session ID, None if user isnt found
+            str: string representation of session ID
         """
         try:
             user = self._db.find_user_by(email=email)
             session_id = _generate_uuid()
             self._db.update_user(user.id, session_id=session_id)
-            return session_id
         except NoResultFound:
-            return None
+            return
 
     def get_user_from_session_id(self, session_id: str) -> str:
-        """
-        Get the user corresponding to a session ID.
+        """get user from session id
 
         Args:
-            session_id (str): Session ID of the user.
+            session_id (str): session id of user
 
         Returns:
-            str: Email of the user, or None if no user is found.
+            str: user email
         """
         if session_id is None:
-            return None
+            return
         try:
             user = self._db.find_user_by(session_id=session_id)
             return user.email
         except NoResultFound:
-            return None
+            return
 
     def destroy_session(self, user_id: int) -> None:
-        """
-        Destroy the session for a user.
+        """destroy session
 
         Args:
-            user_id (int): ID of the user.
+            user_id (int): user id
         """
         try:
             user = self._db.find_user_by(id=user_id)
@@ -127,17 +116,16 @@ class Auth:
             pass
 
     def get_reset_password_token(self, email: str) -> str:
-        """
-        Get a reset password token for a user.
+        """get reset password token
 
         Args:
-            email (str): Email of the user.
-
-        Returns:
-            str: Reset token.
+            email (str): user email
 
         Raises:
-            ValueError: If the user is not found.
+            ValueError: if not found user
+
+        Returns:
+            str: reset token
         """
         try:
             user = self._db.find_user_by(email=email)
@@ -145,18 +133,17 @@ class Auth:
             self._db.update_user(user.id, reset_token=reset_token)
             return reset_token
         except NoResultFound:
-            raise ValueError("User not found")
+            raise ValueError
 
     def update_password(self, reset_token: str, password: str) -> None:
-        """
-        Update the password for a user using a reset token.
+        """update password
 
         Args:
-            reset_token (str): Reset token.
-            password (str): New password for the user.
+            reset_token (str): reset token
+            password (str): user password
 
         Raises:
-            ValueError: If the user is not found.
+            ValueError: if not found user
         """
         try:
             user = self._db.find_user_by(reset_token=reset_token)
@@ -164,4 +151,4 @@ class Auth:
                                  hashed_password=_hash_password(password),
                                  reset_token=None)
         except NoResultFound:
-            raise ValueError("User not found")
+            raise ValueError
